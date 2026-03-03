@@ -1,0 +1,11 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. CLEAN-TEST.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           77 WS-X PIC 9.
+       PROCEDURE DIVISION.
+       MAIN-PARA.
+           PERFORM WORK-PARA.
+           STOP RUN.
+       WORK-PARA.
+           MOVE 1 TO WS-X.

@@ -55,18 +55,20 @@ development_status:
   epic-2-retrospective: optional
 
   # ─── Epic 3: COBOL Structural Analysis — Viper ─────────────────────────────
-  epic-3: backlog
-  3-1-cobol-parser-mcp-core-module-parsing-and-call-graph: backlog
-  3-2-cobol-parser-mcp-complexity-scoring-and-anti-pattern-detection: backlog
-  3-3-cobol-parser-mcp-semantic-paragraph-clustering: backlog
-  3-4-viper-bmad-agent-definition: backlog
-  3-5-viper-workflow-and-step-files: backlog
+  epic-3: in-progress
+  3-1-cobol-parser-mcp-core-module-parsing-and-call-graph: review
+  3-2-cobol-parser-mcp-complexity-scoring-and-anti-pattern-detection: review
+  3-3-cobol-parser-mcp-semantic-paragraph-clustering: review
+  3-4-viper-bmad-agent-definition: review
+  3-5-viper-workflow-and-step-files: review
   epic-3-retrospective: optional
 
-  # ─── Epic 4: Cross-Module Dependency Mapping — Crane ──────────────────────
+  # ─── Epic 4: JCL Analysis & Cross-Module Dependency Mapping — jcl-parser-mcp + Crane ──
   epic-4: backlog
-  4-1-crane-bmad-agent-definition: backlog
-  4-2-crane-workflow-and-step-files: backlog
+  4-1-jcl-parser-mcp-core-parsing: backlog
+  4-2-jcl-parser-mcp-dataset-allocations-and-job-graph: backlog
+  4-3-crane-bmad-agent-definition: backlog
+  4-4-crane-workflow-and-step-files: backlog
   epic-4-retrospective: optional
 
   # ─── Epic 5: Business Rule Extraction & Validation — Shifu ────────────────
@@ -89,10 +91,11 @@ development_status:
   7-2-oogway-workflow-and-step-files: backlog
   epic-7-retrospective: optional
 
-  # ─── Epic 8: Code Generation & QA Sign-off — Po + Tai Lung ───────────────
+  # ─── Epic 8: BMAD Delivery Pipeline — PM Epic Gen + SM Context Enrichment ─────────────
+  # Uses standard BMAD PM/SM/Dev/QA agents — no custom Po or Tai Lung agents
   epic-8: backlog
-  8-1-po-bmad-agent-and-workflow: backlog
-  8-2-tai-lung-bmad-agent-and-workflow: backlog
+  8-1-pm-epic-and-story-generation-from-business-functions: backlog
+  8-2-sm-spec-layer-context-enrichment-workflow: backlog
   epic-8-retrospective: optional
 
   # ─── Epic 9: Expansion Pack Release — Installer & Setup ───────────────────

@@ -1,0 +1,14 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PAYROLL-CALC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           77 WS-AMT PIC 9(5).
+           COPY PAYROLL-WS.
+       PROCEDURE DIVISION.
+       MAIN-PARA.
+           PERFORM CALC-PARA.
+           CALL 'TAX-CALC' USING WS-AMT.
+       CALC-PARA.
+           COMPUTE WS-AMT = WS-AMT * 2.
+       FINAL-PARA.
+           STOP RUN.

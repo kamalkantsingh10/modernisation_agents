@@ -177,7 +177,7 @@ This document provides the complete epic and story breakdown for modernisation_a
 2. `delta-macros-mcp` — macro library, get/search/add tools (Viper depends on this)
 3. `cobol-parser-mcp` — parsing, call graph, clustering, complexity (Viper's engine)
 4. `gitlab-mcp` — GitLab integration (Tigress onwards)
-5. `agents/` — Viper, Crane, Shifu (new); Oogway, Tigress, Po, Tai Lung (customise existing)
+5. `agents/` — Viper, Crane, Shifu (new); Oogway, Tigress (customise existing BMAD) — no Po or Tai Lung agents
 6. `workflows/` — per-agent workflow and step files
 
 **From Architecture — Config Schema**
@@ -191,11 +191,11 @@ This document provides the complete epic and story breakdown for modernisation_a
 | FR29, FR30, FR32, FR34 | Epic 1 | Pipeline setup infrastructure |
 | FR31, FR39, FR8 (partial) | Epic 2 | Delta macro integration |
 | FR1–FR8, FR33, FR35–FR39 | Epic 3 | Viper COBOL analysis |
-| FR9–FR13 | Epic 4 | Crane dependency mapping |
+| FR9–FR13 | Epic 4 | JCL parsing (jcl-parser-mcp) + Crane dependency mapping |
 | FR14–FR18, FR54 | Epic 5 | Shifu business rules |
 | FR40–FR56 | Epic 6 | Tigress GitLab management |
 | FR19–FR22 | Epic 7 | Oogway architecture |
-| FR23–FR28, FR55–FR56 | Epic 8 | Po + Tai Lung code gen & QA |
+| FR23–FR28, FR55–FR56 | Epic 8 | PM epic/story generation + SM context enrichment (BMAD Dev + QA) |
 | FR32 | Epic 9 | Expansion pack installer & setup guide |
 
 ## Epic List
@@ -218,11 +218,11 @@ Analysts can run a complete structural analysis of any COBOL module: paragraph c
 **NFRs addressed:** NFR1, NFR2, NFR6, NFR7, NFR11
 **Architecture items:** cobol-parser-mcp full implementation, Viper BMAD agent definition, Viper workflow + step files
 
-### Epic 4: Cross-Module Dependency Mapping — Crane
-Architects and analysts can map the full dependency landscape of a COBOL estate — Mermaid dependency diagram, detected subsystem groupings, recommended migration order, and circular dependency / dead code detection.
+### Epic 4: JCL Analysis & Cross-Module Dependency Mapping — jcl-parser-mcp + Crane
+Architects and analysts can map the full dependency landscape of a COBOL estate — JCL job boundaries parsed into specdb, static CALL/COPY dependencies combined with JCL runtime execution order, Mermaid dependency diagram, subsystem groupings, migration order, and circular dependency / dead code detection.
 **FRs covered:** FR9–FR13, FR33
-**NFRs addressed:** NFR6
-**Architecture items:** Crane BMAD agent definition, Crane workflow + step files (uses cobol-parser-mcp + specdb-mcp)
+**NFRs addressed:** NFR2, NFR6
+**Architecture items:** jcl-parser-mcp full implementation (parse_jcl, list_job_steps, get_dataset_allocations, build_job_graph) + specdb-mcp schema migration for jcl_jobs/jcl_steps/dataset_allocations; Crane BMAD agent definition; Crane workflow + step files (uses cobol-parser-mcp + jcl-parser-mcp + specdb-mcp)
 
 ### Epic 5: Business Rule Extraction & Validation — Shifu
 Analysts and business validators can extract business rules from COBOL modules in plain English, validate and correct each rule, and persist approved rules to the spec layer as the verified source of truth. Business validator formally signs off.
@@ -242,11 +242,11 @@ Architects can generate a target migration architecture from the validated spec 
 **NFRs addressed:** NFR6
 **Architecture items:** Oogway BMAD agent customisation + Oogway workflow (reads spec layer via specdb-mcp)
 
-### Epic 8: Code Generation & QA Sign-off — Po + Tai Lung
-Developers can generate target-language code per COBOL module from the spec layer and architecture. QA can validate generated code against spec layer business rules and formally sign off each Epic when all modules pass.
+### Epic 8: BMAD Delivery Pipeline — PM Epic Generation + SM Context Enrichment
+PM agent converts Oogway architecture and Shifu business function catalog into BMAD Epics and User Stories (one Epic per business capability, one Story per service boundary). SM agent enriches each story with full spec layer context (business rules as acceptance criteria, confidence scores, Delta macro expansions). Dev and QA use standard BMAD agents to implement and validate — no custom code-generation or QA agents are needed.
 **FRs covered:** FR23–FR28, FR55–FR56
 **NFRs addressed:** NFR6, NFR11
-**Architecture items:** Po BMAD agent customisation + Po workflow; Tai Lung BMAD agent customisation + Tai Lung workflow
+**Architecture items:** PM workflow step file for epic/story generation from business_functions + architecture; SM workflow step file for spec layer context enrichment (queries spec_rules, spec_operations, spec_entities, spec_data_flows per story); confidence-weighted QA acceptance criteria embedded in stories
 
 ### Epic 9: Expansion Pack Release — Installer & Setup
 Operators can install the complete expansion pack with a single command. All agents, workflows, MCP servers, and IDE configuration are deployed automatically. Depends on Epics 1–8 complete.

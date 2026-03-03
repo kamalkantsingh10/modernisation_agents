@@ -1,0 +1,13 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. ALTER-TEST.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           77 WS-X PIC 9.
+       PROCEDURE DIVISION.
+       MAIN-PARA.
+           ALTER GOTO-STMT TO PROCEED TO END-PARA.
+           GO TO GOTO-STMT.
+       GOTO-STMT.
+           GO TO MAIN-PARA.
+       END-PARA.
+           STOP RUN.

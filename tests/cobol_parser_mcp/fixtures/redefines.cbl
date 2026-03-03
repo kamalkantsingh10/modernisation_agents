@@ -1,0 +1,10 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. REDEF-TEST.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           01 WS-GROUP.
+               05 WS-FIELD    PIC X(10).
+               05 WS-REDEF    REDEFINES WS-FIELD PIC 9(10).
+       PROCEDURE DIVISION.
+       MAIN-PARA.
+           STOP RUN.

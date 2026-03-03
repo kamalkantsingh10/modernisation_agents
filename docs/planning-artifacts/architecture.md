@@ -30,8 +30,8 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 - **Dependency Mapping (FR9–13):** Crane cross-module analysis producing Mermaid dependency graph, subsystem groupings, migration order recommendation, and circular dependency / dead code detection.
 - **Business Rule Extraction & Spec Layer (FR14–18):** Shifu business markdown per module plus full population of all 8 `spec_*` SQLite tables. Idempotent re-run support (update, not duplicate).
 - **Migration Architecture (FR19–22):** Oogway consumes spec layer to produce target architecture. Analyst review and modification before finalisation.
-- **Code Generation (FR23–25):** Po generates target-language code per module from spec layer + architecture. Per-module regeneration without affecting others.
-- **QA Validation (FR26–28):** Tai Lung validates generated code against spec layer rules, produces validation report, gates Epic sign-off.
+- **Epic & Story Generation (FR23–25):** PM agent converts Oogway architecture + Shifu business function catalog into BMAD Epics (one per business capability) and User Stories (one per service boundary). SM enriches each story with spec layer context (rules, operations, entities, Delta macro expansions) before Dev picks it up.
+- **Implementation & QA (FR26–28):** Standard BMAD Dev + QA workflow. Dev implements stories using SM-enriched spec layer context. QA validates implemented code against `spec_rules`, confidence-weighted: high-confidence rules are must-pass, medium are should-pass, low-confidence are advisory. No custom code-generation or QA agents — the existing BMAD PM, SM, Dev, QA agents handle this phase.
 - **Pipeline Configuration (FR29–34):** Single-command schema initialisation, glossary configuration, incremental macro library updates, BMAD installer, individual agent re-run, consolidated flag list.
 - **COBOL Dialect Coverage (FR35–39):** IBM Enterprise COBOL, COBOL-85, CICS, DB2 SQL, COPY/copybook resolution, Delta macro resolution via MCP.
 - **GitLab Project Management (FR40–56):** Tigress initialises GitLab project (label taxonomy, milestones, boards). Per-module Issues track pipeline lifecycle. Sprint milestone management. Live README dashboard. Business rule sign-off gate (Claire). QA Epic sign-off gate (Tai Lung).
@@ -49,7 +49,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 - Primary domain: Local-first AI agent pipeline / developer tooling (BMAD Expansion Pack)
 - Complexity level: **High** — 7 agents, 4 MCP servers, 17-table SQLite schema, GitLab integration, COBOL dialect handling, BMAD packaging
-- Estimated architectural components: 4 MCP servers, 7 agent definitions, 1 SQLite database, 1 installer, 1 glossary system, 1 macro library system
+- Estimated architectural components: 5 MCP servers (adding jcl-parser-mcp), 5 custom agent definitions (Viper, Crane, Shifu, Oogway, Tigress — phases 8–9 use existing BMAD PM/SM/Dev/QA), 1 SQLite database, 1 installer, 1 glossary system, 1 macro library system
 - Deployment model: Single developer machine, greenfield, local-only
 
 ### Technical Constraints & Dependencies
@@ -82,36 +82,39 @@ No UI, no frontend framework, no cloud runtime.
 ### MCP Server Framework: FastMCP 3.0.2
 
 FastMCP is the official Python MCP SDK authoring layer (integrated into `mcp` package).
-Powers ~70% of MCP servers across all languages. Python 3.12, managed with `uv`.
+Powers ~70% of MCP servers across all languages. Python 3.12, managed with **Poetry**.
 
-**Initialisation command (per MCP server):**
+**Monorepo setup (root-level, one-time):**
 
 ```bash
-uv init --python 3.12 <server-name>
-cd <server-name>
-uv add "mcp[cli]" fastmcp          # all servers
-uv add lark                         # cobol-parser-mcp only
-uv add aiosqlite                    # specdb-mcp only
-uv add python-gitlab                # gitlab-mcp only
+poetry init --python "^3.12"
+poetry add "mcp[cli]" fastmcp          # all servers
+poetry add lark                         # cobol-parser-mcp only
+poetry add aiosqlite                    # specdb-mcp only
+poetry add "python-gitlab==8.0.0"       # gitlab-mcp only
+poetry add --group dev pytest
 ```
+
+All four MCP servers live as Python packages under `mcp-servers/` and are managed by the single root `pyproject.toml` + `poetry.lock`.
 
 ### Per-Server Library Decisions
 
 | MCP Server | Libraries | Version |
 |---|---|---|
 | `cobol-parser-mcp` | fastmcp, lark | FastMCP 3.0.2, Lark latest |
+| `jcl-parser-mcp` | fastmcp | FastMCP 3.0.2 (regex-based JCL parsing) |
 | `specdb-mcp` | fastmcp, aiosqlite | FastMCP 3.0.2, aiosqlite latest |
 | `delta-macros-mcp` | fastmcp | FastMCP 3.0.2 |
 | `gitlab-mcp` | fastmcp, python-gitlab | FastMCP 3.0.2, python-gitlab 8.0.0 |
 
 ### Architectural Decisions Established
 
-**Language & Runtime:** Python 3.12, uv for project management
+**Language & Runtime:** Python 3.12, Poetry for project management
 **MCP Authoring:** FastMCP 3.0.2 (type-hint-driven tool definitions, lifecycle management)
 **Database Access:** aiosqlite (async, non-blocking SQLite for specdb-mcp)
 **GitLab Client:** python-gitlab 8.0.0 (GitLab API v4, Cloud + self-hosted)
 **COBOL Parsing:** Regex-based static pre-pass (deterministic) + Lark for grammar-level parsing — no full Python COBOL parser exists; custom implementation required.
-**Project Structure:** One uv project per MCP server, isolated venvs, lock files.
+**Project Structure:** Poetry monorepo — single root `pyproject.toml` + `poetry.lock`; all four MCP servers as Python packages under `mcp-servers/` with snake_case package names.
 
 **Note:** Project initialisation (uv init for all 4 servers) should be the first implementation story.
 
@@ -180,7 +183,7 @@ No external migration framework — single-developer local tool does not warrant
 - `flags`: structured list of all flagged items, enabling FR34 (consolidated unresolved construct list).
 
 **MCP Tool Limit:** GitHub Copilot caps at 128 tools across all servers.
-Projected tool count: ~24 tools total (cobol-parser: 4, specdb: 4, delta-macros: 4, gitlab: 12). Well within limit.
+Projected tool count: ~28 tools total (cobol-parser: 4, jcl-parser: 4, specdb: 4, delta-macros: 4, gitlab: 12). Well within limit.
 
 **GitHub Copilot Constraint:** Copilot supports MCP tools only (not resources or prompts).
 No impact — all 4 servers expose tools only by design.
@@ -196,8 +199,8 @@ Both files use identical format:
 {
   "servers": {
     "cobol-parser-mcp": {
-      "command": "uv",
-      "args": ["run", "python", "-m", "server"],
+      "command": "poetry",
+      "args": ["run", "python", "-m", "cobol_parser_mcp.server"],
       "env": {}
     }
   }
@@ -253,24 +256,24 @@ timestamp format, module identity key, error handling scope.
 
 **MCP Server Internal Structure (all 4 servers):**
 ```
-<server-name>/
-├── pyproject.toml
-├── uv.lock
-└── src/
-    ├── server.py        # FastMCP app, tool definitions (thin wrappers only)
-    ├── <domain>.py      # Core logic (e.g. cobol_parser.py, spec_db.py)
-    ├── result.py        # Shared make_result() helper
-    └── config.py        # Config loading from config.yaml / env vars
-tests/
-    ├── test_<domain>.py
-    └── fixtures/        # Sample COBOL files, mock DB, etc.
+mcp-servers/<package_name>/          # e.g. cobol_parser_mcp (snake_case Python package)
+├── __init__.py
+├── server.py        # FastMCP app, tool definitions (thin wrappers only)
+├── <domain>.py      # Core logic (e.g. cobol_parser.py, spec_db.py)
+├── result.py        # make_result() / make_error() / make_warning() helpers
+└── config.py        # Config loading from config.yaml / env vars
+
+tests/<package_name>/                # Root-level tests, mirroring package structure
+├── test_server.py
+├── test_<domain>.py
+└── fixtures/        # Sample COBOL files, mock DB, etc.
 ```
 
 - `server.py` contains ONLY tool definitions — each tool is a thin wrapper calling into `<domain>.py`
 - Business logic lives in domain modules, not in tool functions
 - This separation means logic can be tested without running the MCP server
 
-**Tests Location:** `tests/` directory at the server root (not co-located with source)
+**Tests Location:** Root-level `tests/<package_name>/` directory (not co-located with source, not inside the server package directory)
 
 **Config Loading:** Each server has a `config.py` that reads `config.yaml` from the project root (via path relative to the server's working directory or `BMAD_PROJECT_ROOT` env var). Never hardcode paths.
 
@@ -400,6 +403,8 @@ logger.error("DB write failed: table=%s error=%s", table_name, str(e))
 ```
 mainframe-modernisation/                    # BMAD Expansion Pack root
 ├── README.md
+├── pyproject.toml                          # Root Poetry monorepo — all deps managed here
+├── poetry.lock
 ├── config.yaml                             # Expansion pack config (db_path, gitlab_url, etc.)
 ├── .gitignore                              # Excludes data/, logs/, client COBOL source
 │
@@ -408,9 +413,9 @@ mainframe-modernisation/                    # BMAD Expansion Pack root
 │   ├── crane.md                            # FR9–13
 │   ├── shifu.md                            # FR14–18
 │   ├── oogway.md                           # FR19–22 (existing BMAD agent — customised)
-│   ├── tigress.md                          # FR40–56 (existing BMAD agent — customised)
-│   ├── po.md                               # FR23–25 (existing BMAD agent — customised)
-│   └── tai-lung.md                         # FR26–28 (existing BMAD agent — customised)
+│   └── tigress.md                          # FR40–56 (existing BMAD agent — customised)
+│   # NOTE: Phases 8–9 (Epic & Story gen, Dev, QA) use the standard BMAD PM/SM/Dev/QA
+│   # agents from _bmad/bmm/agents/ — no custom Po or Tai Lung agents are needed.
 │
 ├── workflows/                              # BMAD workflow + step files (one folder per agent)
 │   ├── viper/
@@ -431,97 +436,99 @@ mainframe-modernisation/                    # BMAD Expansion Pack root
 │   │       ├── step-01-business-markdown.md
 │   │       ├── step-02-spec-layer-write.md
 │   │       └── step-03-review-gate.md
+│   ├── crane/
+│   │   ├── workflow.md
+│   │   └── steps/
 │   ├── oogway/
 │   │   └── workflow.md
-│   ├── tigress/
-│   │   └── workflow.md
-│   ├── po/
-│   │   └── workflow.md
-│   └── tai-lung/
+│   └── tigress/
 │       └── workflow.md
+│   # NOTE: No po/ or tai-lung/ workflow folders — phases 8–9 use standard BMAD workflows
 │
-├── mcp-servers/
+├── mcp-servers/                            # Python packages — no per-server pyproject.toml
 │   │
-│   ├── cobol-parser-mcp/                   # FR1–8, FR35–39 | NFR1, NFR2
-│   │   ├── pyproject.toml
-│   │   ├── uv.lock
-│   │   ├── src/
-│   │   │   ├── server.py                   # FastMCP app + tool definitions (thin wrappers)
-│   │   │   ├── cobol_parser.py             # IDENTIFICATION/DATA/PROCEDURE division parsing
-│   │   │   ├── call_graph.py               # Paragraph PERFORM graph builder
-│   │   │   ├── cluster_builder.py          # Semantic paragraph clustering
-│   │   │   ├── complexity_scorer.py        # Low/Medium/High scoring logic
-│   │   │   ├── antipattern_detector.py     # GOTO, ALTER, nested PERFORM detection
-│   │   │   ├── dialect_handler.py          # CICS, DB2 SQL, COPY statement handling
-│   │   │   ├── result.py                   # make_result(), make_error(), make_warning()
-│   │   │   └── config.py                   # Reads config.yaml + env vars
-│   │   └── tests/
-│   │       ├── test_cobol_parser.py
-│   │       ├── test_call_graph.py
-│   │       ├── test_cluster_builder.py
-│   │       ├── test_complexity_scorer.py
-│   │       ├── test_antipattern_detector.py
-│   │       └── fixtures/
-│   │           └── blackjack/              # BlackJack .cbl and .cpy files (regression corpus)
-│   │               ├── BJ-MAIN.cbl
-│   │               ├── BJ-DEALER.cbl
-│   │               ├── BJ-PLAYER.cbl
-│   │               ├── BJ-DECK.cbl
-│   │               ├── BJ-HAND.cbl
-│   │               ├── BJ-SCORE.cbl
-│   │               ├── BJ-IO.cbl
-│   │               ├── BJ-AUDIT.cbl
-│   │               ├── BJ-COMMON.cpy
-│   │               ├── BJ-CARDS.cpy
-│   │               └── BJ-PLAYER-REC.cpy
+│   ├── cobol_parser_mcp/                   # FR1–8, FR35–39 | NFR1, NFR2  (snake_case package)
+│   │   ├── __init__.py
+│   │   ├── server.py                       # FastMCP app + tool definitions (thin wrappers)
+│   │   ├── cobol_parser.py                 # IDENTIFICATION/DATA/PROCEDURE division parsing
+│   │   ├── call_graph.py                   # Paragraph PERFORM graph builder
+│   │   ├── cluster_builder.py              # Semantic paragraph clustering
+│   │   ├── complexity_scorer.py            # Low/Medium/High scoring logic
+│   │   ├── antipattern_detector.py         # GOTO, ALTER, nested PERFORM detection
+│   │   ├── dialect_handler.py              # CICS, DB2 SQL, COPY statement handling
+│   │   ├── result.py                       # make_result(), make_error(), make_warning()
+│   │   └── config.py                       # Reads config.yaml + env vars
 │   │
-│   ├── specdb-mcp/                         # FR17–18, FR29, FR33 | NFR3, NFR10, NFR12, NFR17
-│   │   ├── pyproject.toml
-│   │   ├── uv.lock
-│   │   ├── src/
-│   │   │   ├── server.py                   # FastMCP app + tool definitions (thin wrappers)
-│   │   │   ├── spec_db.py                  # All read/write operations — core domain logic
-│   │   │   ├── schema.py                   # CREATE TABLE statements + migration logic
-│   │   │   ├── migrations.py               # schema_version table + programmatic migrations
-│   │   │   ├── result.py                   # make_result(), make_error(), make_warning()
-│   │   │   └── config.py                   # Reads db_path from config.yaml
-│   │   └── tests/
-│   │       ├── test_spec_db.py
-│   │       ├── test_schema.py
-│   │       ├── test_migrations.py
-│   │       └── fixtures/
-│   │           └── seed_data.py            # Test data for spec layer tables
+│   ├── specdb_mcp/                         # FR17–18, FR29, FR33 | NFR3, NFR10, NFR12, NFR17
+│   │   ├── __init__.py
+│   │   ├── server.py                       # FastMCP app + tool definitions (thin wrappers)
+│   │   ├── spec_db.py                      # All read/write operations — core domain logic
+│   │   ├── schema.py                       # CREATE TABLE statements + migration logic
+│   │   ├── migrations.py                   # schema_version table + programmatic migrations
+│   │   ├── result.py                       # make_result(), make_error(), make_warning()
+│   │   └── config.py                       # Reads db_path from config.yaml
 │   │
-│   ├── delta-macros-mcp/                   # FR8, FR31, FR34, FR39 | NFR4, NFR9
-│   │   ├── pyproject.toml
-│   │   ├── uv.lock
-│   │   ├── src/
-│   │   │   ├── server.py                   # FastMCP app + tool definitions (thin wrappers)
-│   │   │   ├── macro_library.py            # Markdown file parsing + search logic
-│   │   │   ├── result.py                   # make_result(), make_error(), make_warning()
-│   │   │   └── config.py                   # Reads macro_library_path from config.yaml
-│   │   └── tests/
-│   │       ├── test_macro_library.py
-│   │       └── fixtures/
-│   │           └── macros/                 # Sample macro .md files for tests
-│   │               └── DLTM-EXAMPLE.md
+│   ├── delta_macros_mcp/                   # FR8, FR31, FR34, FR39 | NFR4, NFR9
+│   │   ├── __init__.py
+│   │   ├── server.py                       # FastMCP app + tool definitions (thin wrappers)
+│   │   ├── macro_library.py                # Markdown file parsing + search logic
+│   │   ├── result.py                       # make_result(), make_error(), make_warning()
+│   │   └── config.py                       # Reads macro_library_path from config.yaml
 │   │
-│   └── gitlab-mcp/                         # FR40–56 | NFR5, NFR8, NFR16
-│       ├── pyproject.toml
-│       ├── uv.lock
-│       ├── src/
-│       │   ├── server.py                   # FastMCP app + tool definitions (thin wrappers)
-│       │   ├── gitlab_client.py            # python-gitlab wrapper — all API calls
-│       │   ├── label_manager.py            # Label taxonomy creation and management
-│       │   ├── readme_updater.py           # README dashboard generation
-│       │   ├── result.py                   # make_result(), make_error(), make_warning()
-│       │   └── config.py                   # Reads gitlab_url from config.yaml + GITLAB_TOKEN env
-│       └── tests/
-│           ├── test_gitlab_client.py       # Uses mock python-gitlab responses
-│           ├── test_label_manager.py
-│           ├── test_readme_updater.py
-│           └── fixtures/
-│               └── mock_gitlab.py          # Mock GitLab API responses
+│   ├── jcl_parser_mcp/                     # Epic 4 | NFR1, NFR2
+│   │   ├── __init__.py
+│   │   ├── server.py                       # FastMCP app + tool definitions (thin wrappers)
+│   │   ├── jcl_parser.py                   # JOB/STEP/DD statement parsing
+│   │   ├── job_graph.py                    # Cross-job execution graph builder
+│   │   ├── result.py                       # make_result(), make_error(), make_warning()
+│   │   └── config.py                       # Reads config.yaml
+│   │
+│   └── gitlab_mcp/                         # FR40–56 | NFR5, NFR8, NFR16
+│       ├── __init__.py
+│       ├── server.py                       # FastMCP app + tool definitions (thin wrappers)
+│       ├── gitlab_client.py                # python-gitlab wrapper — all API calls
+│       ├── label_manager.py                # Label taxonomy creation and management
+│       ├── readme_updater.py               # README dashboard generation
+│       ├── result.py                       # make_result(), make_error(), make_warning()
+│       └── config.py                       # Reads gitlab_url from config.yaml + GITLAB_TOKEN env
+│
+├── tests/                                  # Root-level tests, mirroring mcp-servers/ structure
+│   ├── __init__.py
+│   ├── cobol_parser_mcp/
+│   │   ├── __init__.py
+│   │   ├── test_server.py
+│   │   ├── test_cobol_parser.py
+│   │   ├── test_call_graph.py
+│   │   ├── test_cluster_builder.py
+│   │   ├── test_complexity_scorer.py
+│   │   ├── test_antipattern_detector.py
+│   │   └── fixtures/
+│   │       └── blackjack/                  # git submodule — real IBM Enterprise COBOL corpus
+│   │           ├── src/                    # .cob source files (BJ-MAIN.cob, BJ-DEALER.cob, …)
+│   │           └── copy/                   # .cpy copybooks (BJ-COMMON.cpy, BJ-CARDS.cpy, …)
+│   ├── specdb_mcp/
+│   │   ├── __init__.py
+│   │   ├── test_server.py
+│   │   ├── test_spec_db.py
+│   │   ├── test_schema.py
+│   │   ├── test_migrations.py
+│   │   └── fixtures/
+│   │       └── seed_data.py                # Test data for spec layer tables
+│   ├── delta_macros_mcp/
+│   │   ├── __init__.py
+│   │   ├── test_server.py
+│   │   ├── test_macro_library.py
+│   │   └── fixtures/
+│   │       └── macros/                     # Sample macro .md files for tests
+│   │           └── DLTM-EXAMPLE.md
+│   └── gitlab_mcp/
+│       ├── __init__.py
+│       ├── test_server.py
+│       ├── test_gitlab_client.py           # Uses mock python-gitlab responses
+│       ├── test_label_manager.py
+│       ├── test_readme_updater.py
+│       └── fixtures/
+│           └── mock_gitlab.py              # Mock GitLab API responses
 │
 ├── templates/
 │   ├── glossary-template.md               # Empty glossary for new client engagements
@@ -554,6 +561,7 @@ mainframe-modernisation/                    # BMAD Expansion Pack root
 | Server | Owns | Does NOT own |
 |---|---|---|
 | `cobol-parser-mcp` | COBOL parsing, call graph, complexity, anti-patterns, dialect detection | Spec layer writes, business logic extraction |
+| `jcl-parser-mcp` | JCL parsing, job step extraction, dataset allocation parsing, job graphs | COBOL source parsing, spec layer writes |
 | `specdb-mcp` | All SQLite reads/writes, schema, migrations | Parsing logic, GitLab calls |
 | `delta-macros-mcp` | Macro library reads, macro search, macro ingest | Anything about COBOL source files |
 | `gitlab-mcp` | All GitLab API calls, label management, README updates | Any local data reads or DB operations |
@@ -573,9 +581,10 @@ No GitLab calls occur during Viper, Crane, or Shifu stages.
 | FR1–8 (Viper/COBOL Analysis) | `cobol-parser-mcp` | `cobol_parser.py`, `call_graph.py`, `cluster_builder.py`, `complexity_scorer.py`, `antipattern_detector.py` |
 | FR9–13 (Crane/Dependencies) | `cobol-parser-mcp` + `specdb-mcp` | `dialect_handler.py` (COPY/CALL extraction), `spec_db.py` (dependencies table) |
 | FR14–18 (Shifu/Spec Layer) | `specdb-mcp` | `spec_db.py`, `schema.py` (all spec_* tables) |
+| FR9–13 (Crane/Dependencies) | `cobol-parser-mcp` + `jcl-parser-mcp` + `specdb-mcp` | Static CALL/COPY deps + JCL runtime deps + spec writes |
 | FR19–22 (Oogway/Architecture) | `agents/oogway.md` | Agent reads spec layer via specdb-mcp |
-| FR23–25 (Po/Code Gen) | `agents/po.md` | Agent reads spec layer + architecture |
-| FR26–28 (Tai Lung/QA) | `agents/tai-lung.md` + `gitlab-mcp` | Validation logic in agent; sign-off via gitlab-mcp |
+| FR23–25 (Epic & Story Gen) | Standard BMAD PM agent + SM agent | PM reads business_functions + Oogway output; SM enriches with spec layer context |
+| FR26–28 (Dev & QA) | Standard BMAD Dev + QA agents | Dev implements SM-enriched stories; QA validates against spec_rules |
 | FR29 (Schema init) | `specdb-mcp` | `schema.py` `init_schema` tool |
 | FR30 (Glossary config) | `config.yaml` + agent workflows | `glossary.md` loaded by Viper workflow |
 | FR31 (Add macro) | `delta-macros-mcp` | `macro_library.py` `add_macro` tool |
@@ -613,21 +622,23 @@ config.yaml (project root)
 
 ### Development Workflow
 
-**Running a single MCP server for development:**
+**Running a single MCP server for development (from project root):**
 ```bash
-cd mcp-servers/cobol-parser-mcp
-uv run python -m src.server
+poetry run python -m cobol_parser_mcp.server
+poetry run python -m specdb_mcp.server
+poetry run python -m delta_macros_mcp.server
+poetry run python -m gitlab_mcp.server
 ```
 
-**Running tests for a server:**
+**Running tests (from project root):**
 ```bash
-cd mcp-servers/cobol-parser-mcp
-uv run pytest tests/
+poetry run pytest tests/                          # all servers
+poetry run pytest tests/cobol_parser_mcp/         # single server
 ```
 
 **BlackJack regression run:** Load BlackJack corpus files from
-`mcp-servers/cobol-parser-mcp/tests/fixtures/blackjack/` and run the full
-pipeline against them. All 8 modules must produce valid spec layer output.
+`tests/cobol_parser_mcp/fixtures/blackjack/src/` (`.cob`) and `copy/` (`.cpy`) and run the full
+pipeline against them. All modules must produce valid spec layer output.
 
 ## Architecture Validation Results
 
@@ -688,7 +699,7 @@ IDE session by design; data integrity is the persistence guarantee, not process 
 - [x] 7 cross-cutting concerns mapped
 
 **✅ Architectural Decisions**
-- [x] MCP framework: FastMCP 3.0.2 (Python 3.12, uv)
+- [x] MCP framework: FastMCP 3.0.2 (Python 3.12, Poetry monorepo)
 - [x] Database: SQLite via aiosqlite, configurable path
 - [x] Transport: STDIO (Claude Code + GitHub Copilot)
 - [x] GitLab: python-gitlab 8.0.0, GITLAB_TOKEN env var
@@ -727,9 +738,9 @@ IDE session by design; data integrity is the persistence guarantee, not process 
 **Key Strengths:**
 - SQLite spec layer as the message bus between agents eliminates direct agent coupling
 - Structured result dict with flags array directly implements "no silent failures" (NFR11)
-- Separate uv projects per MCP server directly implement independent updatability (NFR18)
+- Poetry monorepo with a single lock file ensures reproducible installs across all 4 servers
 - STDIO transport confirmed compatible with both target IDEs
-- BlackJack corpus in fixtures/ provides immediate regression baseline (NFR21)
+- BlackJack corpus (git submodule) in `tests/cobol_parser_mcp/fixtures/blackjack/` provides immediate regression baseline (NFR21)
 
 **Areas for Future Enhancement:**
 - Shared `result.py` as a published package (avoids copy-per-server)
@@ -743,9 +754,11 @@ IDE session by design; data integrity is the persistence guarantee, not process 
 1. specdb-mcp        — schema, migrations, CRUD tools (all downstream depends on this)
 2. delta-macros-mcp  — macro library, get/search/add tools (Viper depends on this)
 3. cobol-parser-mcp  — parsing, call graph, clustering, complexity (Viper's engine)
-4. gitlab-mcp        — GitLab integration (Tigress onwards, post-architecture stage)
-5. agents/           — Viper, Crane, Shifu (new); Oogway, Tigress, Po, Tai Lung (customise)
-6. workflows/        — Per-agent workflow and step files
+4. jcl-parser-mcp    — JCL parsing, job steps, dataset allocations (Crane depends on this)
+5. gitlab-mcp        — GitLab integration (Tigress onwards, post-architecture stage)
+6. agents/           — Viper, Crane, Shifu (new); Oogway, Tigress (customise existing BMAD)
+                       NOTE: No Po or Tai Lung agents — phases 8–9 use standard BMAD workflow
+7. workflows/        — Per-agent workflow and step files (viper, crane, shifu, oogway, tigress)
 ```
 
 **AI Agent Guidelines:**
