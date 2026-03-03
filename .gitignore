@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Poetry / venv
+.venv/
+dist/
+
+# Runtime logs (keep .gitkeep, ignore actual log files)
+logs/*.log
+
+# SQLite databases
+data/*.sqlite
+data/*.db
+
+# VS Code database files
+.vscode/browse.vc.db
+.vscode/browse.vc.db-shm
+.vscode/browse.vc.db-wal
+
+# OS
+.DS_Store

@@ -1,0 +1,26 @@
+{
+  "servers": {
+    "cobol-parser-mcp": {
+      "command": "poetry",
+      "args": ["run", "python", "-m", "cobol_parser_mcp.server"],
+      "env": {}
+    },
+    "specdb-mcp": {
+      "command": "poetry",
+      "args": ["run", "python", "-m", "specdb_mcp.server"],
+      "env": {}
+    },
+    "delta-macros-mcp": {
+      "command": "poetry",
+      "args": ["run", "python", "-m", "delta_macros_mcp.server"],
+      "env": {}
+    },
+    "gitlab-mcp": {
+      "command": "poetry",
+      "args": ["run", "python", "-m", "gitlab_mcp.server"],
+      "env": {
+        "GITLAB_TOKEN": "${env:GITLAB_TOKEN}"
+      }
+    }
+  }
+}

@@ -1,0 +1,95 @@
+# generated: 2026-02-27
+# project: cobol-blackjack
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: docs/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-02-27
+project: cobol-blackjack
+project_key: NOKEY
+tracking_system: file-system
+story_location: docs/implementation-artifacts
+
+development_status:
+  # ── Epic 1: Working Project Skeleton ─────────────────────────────────────
+  epic-1: done
+  1-1-project-scaffold-and-shared-data-structures: done
+  1-2-middleware-stubs-and-build-pipeline-validation: done
+  epic-1-retrospective: optional
+
+  # ── Epic 2: Playable Blackjack with Authentic Terminal Presentation ───────
+  epic-2: done
+  2-1-deck-module-initialization-and-shuffle: done
+  2-2-deal-module-initial-hand-distribution: done
+  2-3-scoring-module-hand-value-calculation: done
+  2-4-display-module-terminal-rendering: done
+  2-5-dealer-module-dealer-turn-logic: done
+  2-6-main-game-loop-full-playable-round: done
+  2-7-display-module-visual-upgrade: done
+  epic-2-retrospective: optional
+
+  # ── Epic 3: Deliberate Defects (Original 6) ─────────────────────────────
+  epic-3: done
+  3-1-biased-shuffle-and-dead-code: done
+  3-2-off-by-one-in-deal-array: done
+  3-3-ace-recalculation-failure: done
+  3-4-soft-17-rule-violation: done
+  3-5-no-input-validation-on-hit-stand-prompt: done
+  epic-3-retrospective: optional
+
+  # ── Epic 4: Demo Documentation ──────────────────────────────────────────
+  epic-4: done
+  4-1-readme-launch-instructions-and-known-bugs-list: done
+  epic-4-retrospective: optional
+
+  # ── Epic 5: Betting System with Business Logic ──────────────────────────
+  epic-5: done
+  5-1-copybook-extension-and-chip-balance-initialization: done
+  5-2-bet-placement-and-validation: done
+  5-3-natural-blackjack-detection-and-payout: done
+  5-4-double-down-action: done
+  5-5-payout-calculation-and-round-resolution: done
+  epic-5-retrospective: optional
+
+  # ── Epic 6: Betting Deliberate Defects ──────────────────────────────────
+  epic-6: done
+  6-1-payout-rounding-error-on-natural-blackjack: done
+  6-2-double-down-anytime-rule-violation: done
+  6-3-bet-over-balance-from-stale-variable: done
+  epic-6-retrospective: optional
+
+  # ── Epic 7: Tech Debt Saturation ────────────────────────────────────────
+  epic-7: done
+  7-1-orphaned-feature-code: done
+  7-2-anti-pattern-saturation: done
+  7-3-readme-anti-pattern-catalogue: done
+  epic-7-retrospective: optional

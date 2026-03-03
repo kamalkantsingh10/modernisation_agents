@@ -1,0 +1,3 @@
+[submodule "tests/cobol_parser_mcp/fixtures/blackjack"]
+	path = tests/cobol_parser_mcp/fixtures/blackjack
+	url = https://github.com/kamalkantsingh10/cobol-blackjack

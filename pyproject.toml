@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "modernisation-agents"
+version = "0.1.0"
+description = "Mainframe Modernisation AI Agent Pipeline"
+authors = []
+packages = [
+    {include = "cobol_parser_mcp", from = "mcp-servers"},
+    {include = "specdb_mcp", from = "mcp-servers"},
+    {include = "delta_macros_mcp", from = "mcp-servers"},
+    {include = "gitlab_mcp", from = "mcp-servers"},
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+mcp = {extras = ["cli"], version = "*"}
+fastmcp = "^3.0.2"
+aiosqlite = "*"
+lark = "*"
+python-gitlab = "8.0.0"
+pyyaml = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+pytest-asyncio = "^0.23"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

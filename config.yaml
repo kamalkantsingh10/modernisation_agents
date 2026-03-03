@@ -1,0 +1,23 @@
+# Mainframe Modernisation Agents — Engagement Configuration
+# Copy this file to the project root for each new engagement.
+# All MCP servers read this file at startup.
+
+# Path to the SQLite spec layer database.
+# Relative paths are resolved from the project root.
+db_path: data/specdb.sqlite
+
+# Path to the Delta macro library directory.
+# Each .md file in this directory represents one macro.
+macro_library_path: blackjack/macros/
+
+# GitLab instance URL (Cloud or self-hosted).
+# Used by gitlab-mcp for all API calls.
+gitlab_url: https://gitlab.com
+
+# Short identifier for this engagement / GitLab project name.
+project_name: mainframe-modernisation
+
+# Target language for code generation.
+# TBD — set to 'Java' or 'Python' before the Oogway stage.
+# Leave blank during all earlier pipeline stages.
+target_language: ""

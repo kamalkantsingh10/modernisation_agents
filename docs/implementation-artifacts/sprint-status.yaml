@@ -1,0 +1,102 @@
+# generated: 2026-03-01
+# project: modernisation_agents
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: docs/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-01
+project: modernisation_agents
+project_key: NOKEY
+tracking_system: file-system
+story_location: docs/implementation-artifacts
+
+development_status:
+  # ─── Epic 1: Pipeline Foundation & Configuration ───────────────────────────
+  epic-1: in-progress
+  1-1-project-scaffolding-and-shared-infrastructure: review
+  1-2-specdb-mcp-schema-and-migrations: review
+  1-3-specdb-mcp-crud-tools: review
+  1-4-engagement-configuration-and-templates: review
+  epic-1-retrospective: optional
+
+  # ─── Epic 2: Client Macro Knowledge Integration ────────────────────────────
+  epic-2: in-progress
+  2-1-delta-macros-mcp-macro-lookup: review
+  2-2-delta-macros-mcp-macro-ingestion: review
+  epic-2-retrospective: optional
+
+  # ─── Epic 3: COBOL Structural Analysis — Viper ─────────────────────────────
+  epic-3: backlog
+  3-1-cobol-parser-mcp-core-module-parsing-and-call-graph: backlog
+  3-2-cobol-parser-mcp-complexity-scoring-and-anti-pattern-detection: backlog
+  3-3-cobol-parser-mcp-semantic-paragraph-clustering: backlog
+  3-4-viper-bmad-agent-definition: backlog
+  3-5-viper-workflow-and-step-files: backlog
+  epic-3-retrospective: optional
+
+  # ─── Epic 4: Cross-Module Dependency Mapping — Crane ──────────────────────
+  epic-4: backlog
+  4-1-crane-bmad-agent-definition: backlog
+  4-2-crane-workflow-and-step-files: backlog
+  epic-4-retrospective: optional
+
+  # ─── Epic 5: Business Rule Extraction & Validation — Shifu ────────────────
+  epic-5: backlog
+  5-1-shifu-bmad-agent-definition: backlog
+  5-2-shifu-workflow-and-step-files: backlog
+  epic-5-retrospective: optional
+
+  # ─── Epic 6: GitLab Delivery Management — Tigress ─────────────────────────
+  epic-6: backlog
+  6-1-gitlab-mcp-project-initialisation-tools: backlog
+  6-2-gitlab-mcp-module-lifecycle-and-progress-reporting-tools: backlog
+  6-3-gitlab-mcp-sprint-and-sign-off-tools: backlog
+  6-4-tigress-bmad-agent-and-workflow: backlog
+  epic-6-retrospective: optional
+
+  # ─── Epic 7: Migration Architecture — Oogway ──────────────────────────────
+  epic-7: backlog
+  7-1-oogway-bmad-agent-definition: backlog
+  7-2-oogway-workflow-and-step-files: backlog
+  epic-7-retrospective: optional
+
+  # ─── Epic 8: Code Generation & QA Sign-off — Po + Tai Lung ───────────────
+  epic-8: backlog
+  8-1-po-bmad-agent-and-workflow: backlog
+  8-2-tai-lung-bmad-agent-and-workflow: backlog
+  epic-8-retrospective: optional
+
+  # ─── Epic 9: Expansion Pack Release — Installer & Setup ───────────────────
+  epic-9: backlog
+  9-1-expansion-pack-installer-script: backlog
+  9-2-operator-setup-guide: backlog
+  epic-9-retrospective: optional

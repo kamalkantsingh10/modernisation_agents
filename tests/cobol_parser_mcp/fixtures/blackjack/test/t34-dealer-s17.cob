@@ -1,0 +1,39 @@
+      * T34-DEALER-S17 -- VERIFY SOFT 17 STAND BUG (FR22)
+      * STORY 3.4: DEALER DRAWS TO SOFT 17, STANDS INSTEAD OF HITTING
+      * SETUP: DEALER HAS 6 (DC=1, DT=006); DECK[3] = ACE (FV=11)
+      * CONFIRMS WS-CT3=1 IS SET IN CALC-2 BEFORE SOFT-1 IS REACHED
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. T34-DEALER-S17.
+       ENVIRONMENT DIVISION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           COPY WS-DECK.
+           COPY WS-HANDS.
+           COPY WS-GAME.
+       PROCEDURE DIVISION.
+       MAIN-1.
+           DISPLAY "=== T34: SOFT 17 STAND BUG ==="
+           MOVE ZEROS TO WS-DK
+           MOVE ZEROS TO WS-HND
+           MOVE ZEROS TO WS-GM
+           MOVE 3     TO WS-CT1
+           MOVE 'H'   TO WS-S1(3)
+           MOVE 'A'   TO WS-RK(3)
+           MOVE 11    TO WS-FV(3)
+           MOVE 1     TO WS-DC
+           MOVE 'C'   TO WS-DS1(1)
+           MOVE '6'   TO WS-DRK(1)
+           MOVE 6     TO WS-DFV(1)
+           MOVE 6     TO WS-DT
+           DISPLAY "SETUP: DEALER 6 OF CLUBS (DC=1, DT=006)"
+           DISPLAY "       DECK[3] = ACE OF HEARTS (FV=11)"
+           DISPLAY "EXPECTED: HIT (DT<17), DRAW ACE ->"
+               " SOFT 17 -> HIT AGAIN"
+           DISPLAY "BUG: SOFT-1 DETECTS CT3=1, STANDS ANYWAY"
+           DISPLAY " "
+           CALL 'BJACK-DEALER' USING BY REFERENCE WS-DK WS-HND WS-GM
+           DISPLAY "RESULT:"
+           DISPLAY "  WS-DC = " WS-DC " (2 = DREW ACE, CORRECT)"
+           DISPLAY "  WS-DT = " WS-DT " (SOFT 17, BUG)"
+           DISPLAY "  DEALER STOOD -- SHOULD HAVE HIT AGAIN"
+           STOP RUN.
